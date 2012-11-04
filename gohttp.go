@@ -11,6 +11,7 @@ import (
 	"mime"
 	"html/template"
 	"io"
+	"runtime"
 )
 
 var (
@@ -151,6 +152,7 @@ func (server *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
 	server := &Server{ Port: PORT, Webroot: WEBROOT }
 	server.Start()
