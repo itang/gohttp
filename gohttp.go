@@ -1,16 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"flag"
+	"fmt"
+	"html/template"
+	"io"
+	"log"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
-	"log"
-	"mime"
-	"html/template"
-	"io"
+	"path/filepath"
 	"runtime"
 )
 
@@ -20,7 +21,7 @@ var (
 )
 
 type Server struct {
-	Port int
+	Port    int
 	Webroot string
 }
 
@@ -56,13 +57,13 @@ func (server *Server) requestURIToFilepath(uri string) (fullpath string, relpath
 	relpath = unescapeIt
 	log.Printf("unescape uri:%v", relpath)
 
-	fullpath = path.Join(server.Webroot, relpath[1:])
+	fullpath = filepath.Join(server.Webroot, relpath[1:])
 	//** trace
 	log.Printf("base path:%v\n", path.Base(fullpath))
 	log.Printf("dir path:%v\n", path.Dir(fullpath))
 	log.Printf("ext path:%v\n", path.Ext(fullpath))
 	//**
-	return 
+	return
 }
 
 func checkError(err error) {
@@ -72,7 +73,7 @@ func checkError(err error) {
 }
 
 type Item struct {
-	Name string
+	Name  string
 	Title string
 	URI   string
 	Size  int64
@@ -85,25 +86,25 @@ func (server *Server) processDir(w http.ResponseWriter, dir *os.File, fullpath s
 
 	items := make([]Item, 0, len(fis))
 	for _, fi := range fis {
-		item := Item{ 
-			Name: fi.Name(),
+		item := Item{
+			Name:  fi.Name(),
 			Title: fi.Name(),
-			URI : path.Join(relpath,fi.Name()),
-			Size : fi.Size(),
+			URI:   path.Join(relpath, fi.Name()),
+			Size:  fi.Size(),
 		}
 		items = append(items, item)
 	}
 
 	tmp.Execute(w, map[string]interface{}{
-		"ParentURI": path.Dir(relpath),
-		"CurrentURI" : relpath,
-		"files": items,
-	  })
+		"ParentURI":  path.Dir(relpath),
+		"CurrentURI": relpath,
+		"files":      items,
+	})
 }
 
 func (server *Server) sendFile(w http.ResponseWriter, file *os.File, fullpath string, relpath string) {
 	if mimetype := mime.TypeByExtension(path.Ext(file.Name())); mimetype != "" {
-			w.Header().Set("Content-Type", mimetype)
+		w.Header().Set("Content-Type", mimetype)
 	} else {
 		w.Header().Set("Content-Type", "application/octet-stream")
 	}
@@ -114,7 +115,7 @@ func (server *Server) sendFile(w http.ResponseWriter, file *os.File, fullpath st
 }
 
 func (server *Server) handler(w http.ResponseWriter, req *http.Request) {
-	uri := req.RequestURI // 请求的URI, 如http://localhost:8080/hello -> /hello
+	uri := req.RequestURI      // 请求的URI, 如http://localhost:8080/hello -> /hello
 	if uri == "/favicon.ico" { // 不处理
 		return
 	}
@@ -129,9 +130,9 @@ func (server *Server) handler(w http.ResponseWriter, req *http.Request) {
 		stat, _ := file.Stat()
 
 		log.Printf("%v is dir? %v\n", file.Name(), stat.IsDir())
-		if stat.IsDir() { 
+		if stat.IsDir() {
 			server.processDir(w, file, fullpath, relpath)
-		}else{
+		} else {
 			server.sendFile(w, file, fullpath, relpath)
 		}
 	}
@@ -140,8 +141,8 @@ func (server *Server) handler(w http.ResponseWriter, req *http.Request) {
 func (server *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	log.Printf("<< Request from %v", req.RemoteAddr)
 
-	defer func(){
-		if err :=recover(); err != nil {
+	defer func() {
+		if err := recover(); err != nil {
 			http.Error(w, fmt.Sprintf("%v", err), http.StatusInternalServerError)
 		}
 	}()
@@ -154,11 +155,12 @@ func (server *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
-	server := &Server{ Port: PORT, Webroot: WEBROOT }
+	server := &Server{Port: PORT, Webroot: WEBROOT}
 	server.Start()
 }
 
 var tmp = template.Must(template.New("index").Parse(html))
+
 const html = `
 <a href="{{.ParentURI}}"> {{.ParentURI}} </a> | <a href="{{.CurrentURI}}">{{.CurrentURI}}</a>
 <ul>
