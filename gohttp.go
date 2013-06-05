@@ -16,6 +16,12 @@ import (
 )
 
 const htmlTpl = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{.CurrentURI}} - gohttp</title></head>
+<body>
 <a href="{{.ParentURI}}"> {{.ParentURI}} </a> | <a href="{{.CurrentURI}}">{{.CurrentURI}}</a>
 <ul>
    {{range .files}}
@@ -24,8 +30,8 @@ const htmlTpl = `
       <small>({{.Size}})</small>
       {{end}}
       </a></li>
-   {{end}}
-</ul>`
+   {{end}}</ul>
+</body></html>`
 
 var (
 	port    = 8080
