@@ -15,14 +15,7 @@ import (
 	"runtime"
 )
 
-var (
-	port    = 8080
-	webroot = "."
-)
-
-var tmp = template.Must(template.New("index").Parse(html))
-
-const html = `
+const htmlTpl = `
 <a href="{{.ParentURI}}"> {{.ParentURI}} </a> | <a href="{{.CurrentURI}}">{{.CurrentURI}}</a>
 <ul>
    {{range .files}}
@@ -34,12 +27,15 @@ const html = `
    {{end}}
 </ul>`
 
+var (
+	port    = 8080
+	webroot = "."
+	tmp = template.Must(template.New("index").Parse(htmlTpl))
+)
+
 ////////////////////////////////////////////////////////////////////////////////////////////
 func init() {
 	wd, _ := os.Getwd()
-	log.Printf("Current dir:%v", wd)
-	log.Printf("PathSeparator:%c", os.PathSeparator)
-
 	flag.IntVar(&port, "port", port, "The port (default is 8080)")
 	flag.StringVar(&webroot, "webroot", wd, "Web root directory (default is current work directory)")
 }
@@ -64,21 +60,16 @@ func checkError(err error) {
 }
 
 func (server *Server) Start() {
-	log.Printf("Port:%v", server.port)
-	log.Printf("Webroot:%v", server.webroot)
-
 	server.router()
 
 	addr := fmt.Sprintf(":%v", server.port)
-	fmt.Printf("Start server at :%v\n", server.port)
+	log.Printf(">> Start server at :%v, webroot: %v\n\n", server.port, server.webroot)
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		fmt.Errorf("%v", err)
 	}
 }
 
 func (server *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	log.Printf("<< Request from %v", req.RemoteAddr)
-
 	defer func() {
 		if err := recover(); err != nil {
 			http.Error(w, fmt.Sprintf("%v", err), http.StatusInternalServerError)
@@ -86,8 +77,6 @@ func (server *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}()
 
 	server.handler(w, req)
-
-	log.Printf("End Request>>")
 }
 
 func (server *Server) router() {
@@ -100,11 +89,14 @@ func (server *Server) handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	log.Printf(`%s "%s" from %v`, req.Method, req.RequestURI, req.RemoteAddr)
+
 	fullpath, relpath := server.requestURIToFilepath(uri)
 	log.Printf("\tTo Filepath:%v", fullpath)
 
 	file, err := os.Open(fullpath)
 	if err != nil || os.IsNotExist(err) { // 文件不存在
+		log.Println("\tNotFound")
 		http.NotFound(w, req)
 	} else {
 		stat, _ := file.Stat()
@@ -116,6 +108,8 @@ func (server *Server) handler(w http.ResponseWriter, req *http.Request) {
 			server.sendFile(w, file, fullpath, relpath)
 		}
 	}
+
+	log.Printf("END")
 }
 
 func (server *Server) requestURIToFilepath(uri string) (fullpath string, relpath string) {
