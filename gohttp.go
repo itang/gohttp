@@ -7,12 +7,14 @@ import (
 	"io"
 	"log"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 const htmlTpl = `
@@ -36,7 +38,7 @@ const htmlTpl = `
 var (
 	port    = 8080
 	webroot = "."
-	tmp = template.Must(template.New("index").Parse(htmlTpl))
+	tmp     = template.Must(template.New("index").Parse(htmlTpl))
 )
 
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -65,11 +67,33 @@ func checkError(err error) {
 	}
 }
 
+func getHostIPs() string {
+	name, err := os.Hostname()
+	if err != nil {
+		return ""
+	}
+
+	addrs, err := net.LookupHost(name)
+	if err != nil {
+		return ""
+	}
+
+	for _, addr := range addrs {
+		if !strings.Contains(addr, ":") {
+			return addr
+		}
+	}
+	return strings.Join(addrs, ", ")
+}
+
 func (server *Server) Start() {
 	server.router()
 
 	addr := fmt.Sprintf(":%v", server.port)
-	log.Printf(">> Start server at :%v, webroot: %v\n\n", server.port, server.webroot)
+	log.Printf(">> Start server at :%v\n", server.port)
+	fmt.Printf("\t\t\tweb root: %v\n", server.webroot)
+	fmt.Printf("\t\t\thttp url: http://%v:%v\n\n", getHostIPs(), server.port)
+
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		fmt.Errorf("%v", err)
 	}
