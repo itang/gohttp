@@ -68,22 +68,47 @@ func checkError(err error) {
 }
 
 func getHostIPs() string {
-	name, err := os.Hostname()
-	if err != nil {
-		return ""
-	}
+	switch runtime.GOOS {
+	case "linux":
+		{
+			ifi, err := net.InterfaceByName("wlan0")
+			if err != nil {
+				return ""
+			}
+			addrs, err := ifi.Addrs()
+			if err != nil {
+				return ""
+			}
+			for _, addr := range addrs {
+				ip := addr.String()
+				if !strings.Contains(ip, ":") && !strings.HasPrefix(ip, "127") {
+					end := len(ip) - 3
+					return ip[0:end]
+				}
+			}
+			return ""
+		}
+	default:
+		{
+			name, err := os.Hostname()
+			if err != nil {
+				return ""
+			}
 
-	addrs, err := net.LookupHost(name)
-	if err != nil {
-		return ""
-	}
-
-	for _, addr := range addrs {
-		if !strings.Contains(addr, ":") {
-			return addr
+			addrs, err := net.LookupHost(name)
+			if err != nil {
+				return ""
+			}
+			ips, err := net.LookupIP(name)
+			fmt.Printf("ips:%v\n", ips)
+			for _, addr := range addrs {
+				if !strings.Contains(addr, ":") && !strings.HasPrefix(addr, "127") {
+					return addr
+				}
+			}
+			return strings.Join(addrs, ", ")
 		}
 	}
-	return strings.Join(addrs, ", ")
 }
 
 func (server *Server) Start() {
