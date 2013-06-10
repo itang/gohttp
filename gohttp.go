@@ -114,14 +114,12 @@ func getHostIPs() string {
 func (server *Server) Start() {
 	server.router()
 
-	addr := fmt.Sprintf(":%v", server.port)
-	log.Printf(">> Start server at :%v\n", server.port)
-	fmt.Printf("\t\t\tweb root: %v\n", server.webroot)
-	fmt.Printf("\t\t\thttp url: http://%v:%v\n\n", getHostIPs(), server.port)
+	fmt.Printf("Serving HTTP on %s port %d from \"%s\" ... \n",
+		getHostIPs(), server.port, server.webroot,
+	)
 
-	if err := http.ListenAndServe(addr, nil); err != nil {
-		fmt.Errorf("%v", err)
-	}
+	addr := fmt.Sprintf(":%v", server.port)
+	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
 func (server *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
@@ -174,7 +172,6 @@ func (server *Server) requestURIToFilepath(uri string) (fullpath string, relpath
 	log.Printf("\tUnescape URI:%v", relpath)
 
 	fullpath = filepath.Join(server.webroot, relpath[1:])
-	//log.Printf("base path:%v, dir path:%v, ext path:%v\n", path.Base(fullpath), path.Dir(fullpath), path.Ext(fullpath))
 
 	return
 }
