@@ -3,18 +3,17 @@ package main
 import (
 	"flag"
 	"fmt"
+	gotang_net "github.com/itang/gotang/net"
 	"html/template"
 	"io"
 	"log"
 	"mime"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"runtime"
-	"strings"
 )
 
 const htmlTpl = `
@@ -67,55 +66,19 @@ func checkError(err error) {
 	}
 }
 
-func getHostIPs() string {
-	switch runtime.GOOS {
-	case "linux":
-		{
-			ifi, err := net.InterfaceByName("wlan0")
-			if err != nil {
-				return ""
-			}
-			addrs, err := ifi.Addrs()
-			if err != nil {
-				return ""
-			}
-			for _, addr := range addrs {
-				ip := addr.String()
-				if !strings.Contains(ip, ":") && !strings.HasPrefix(ip, "127") {
-					end := len(ip) - 3
-					return ip[0:end]
-				}
-			}
-			return ""
-		}
-	default:
-		{
-			name, err := os.Hostname()
-			if err != nil {
-				return ""
-			}
-
-			addrs, err := net.LookupHost(name)
-			if err != nil {
-				return ""
-			}
-			ips, err := net.LookupIP(name)
-			fmt.Printf("ips:%v\n", ips)
-			for _, addr := range addrs {
-				if !strings.Contains(addr, ":") && !strings.HasPrefix(addr, "127") {
-					return addr
-				}
-			}
-			return strings.Join(addrs, ", ")
-		}
+func wlanIP4() string {
+	wip, err := gotang_net.LookupWlanIP4addr()
+	if err != nil {
+		wip = "Unknown"
 	}
+	return wip
 }
 
 func (server *Server) Start() {
 	server.router()
 
 	fmt.Printf("Serving HTTP on %s port %d from \"%s\" ... \n",
-		getHostIPs(), server.port, server.webroot,
+		wlanIP4(), server.port, server.webroot,
 	)
 
 	addr := fmt.Sprintf(":%v", server.port)
