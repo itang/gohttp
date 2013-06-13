@@ -22,8 +22,14 @@ const htmlTpl = `
 <head>
   <meta charset="utf-8">
   <title>{{.CurrentURI}} - gohttp</title></head>
+  <link href="http://twitter.github.io/bootstrap/assets/css/bootstrap.css" rel="stylesheet">
 <body>
-<a href="{{.ParentURI}}"> {{.ParentURI}} </a> | <a href="{{.CurrentURI}}">{{.CurrentURI}}</a>
+<div class="container-fluid">
+<ul class="breadcrumb">
+  <li><a href="http://github.com/itang/gohttp">GOHTTP</a><span class="divider"> | </span></li>
+  <li><a href="#"><a href="{{.ParentURI}}">{{.ParentURI}}</a><span class="divider">/</span></li>
+  <li class="active"><a href="{{.CurrentURI}}">{{.CurrentURI}}</a></li>
+</ul>
 <ul>
    {{range .files}}
       <li><a href="{{.URI}}">{{.Name}}
@@ -32,7 +38,7 @@ const htmlTpl = `
       {{end}}
       </a></li>
    {{end}}</ul>
-</body></html>`
+</div></body></html>`
 
 var (
 	port    = 8080
@@ -146,11 +152,15 @@ func (server *Server) processDir(w http.ResponseWriter, dir *os.File, fullpath s
 
 	items := make([]Item, 0, len(fis))
 	for _, fi := range fis {
+		var size int64 = 0
+		if !fi.IsDir() {
+			size = fi.Size()
+		}
 		item := Item{
 			Name:  fi.Name(),
 			Title: fi.Name(),
 			URI:   path.Join(relpath, fi.Name()),
-			Size:  fi.Size(),
+			Size:  size,
 		}
 		items = append(items, item)
 	}
