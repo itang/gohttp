@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/itang/gotang"
 	gotang_net "github.com/itang/gotang/net"
 	"html/template"
 	"io"
@@ -64,12 +65,6 @@ type Item struct {
 	Title string
 	URI   string
 	Size  int64
-}
-
-func checkError(err error) {
-	if err != nil {
-		panic(err)
-	}
 }
 
 func wlanIP4() string {
@@ -148,7 +143,7 @@ func (server *Server) requestURIToFilepath(uri string) (fullpath string, relpath
 func (server *Server) processDir(w http.ResponseWriter, dir *os.File, fullpath string, relpath string) {
 	w.Header().Set("Content-type", "text/html; charset=UTF-8")
 	fis, err := dir.Readdir(-1)
-	checkError(err)
+	gotang.CheckError(err)
 
 	items := make([]Item, 0, len(fis))
 	for _, fi := range fis {
