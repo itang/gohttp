@@ -1,7 +1,6 @@
-package main
+package gohttp
 
 import (
-	"flag"
 	"fmt"
 	"github.com/itang/gotang"
 	gotang_net "github.com/itang/gotang/net"
@@ -14,7 +13,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"runtime"
 )
 
 const htmlTpl = `
@@ -41,23 +39,11 @@ const htmlTpl = `
    {{end}}</ul>
 </div></body></html>`
 
-var (
-	port    = 8080
-	webroot = "."
-	tmp     = template.Must(template.New("index").Parse(htmlTpl))
-)
+var tmp = template.Must(template.New("index").Parse(htmlTpl))
 
-////////////////////////////////////////////////////////////////////////////////////////////
-func init() {
-	wd, _ := os.Getwd()
-	flag.IntVar(&port, "port", port, "The port (default is 8080)")
-	flag.StringVar(&webroot, "webroot", wd, "Web root directory (default is current work directory)")
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////
-type Server struct {
-	port    int
-	webroot string
+type FileServer struct {
+	Port    int
+	Webroot string
 }
 
 type Item struct {
@@ -75,32 +61,32 @@ func wlanIP4() string {
 	return wip
 }
 
-func (server *Server) Start() {
-	server.router()
+func (FileServer *FileServer) Start() {
+	FileServer.router()
 
 	fmt.Printf("Serving HTTP on %s port %d from \"%s\" ... \n",
-		wlanIP4(), server.port, server.webroot,
+		wlanIP4(), FileServer.Port, FileServer.Webroot,
 	)
 
-	addr := fmt.Sprintf(":%v", server.port)
+	addr := fmt.Sprintf(":%v", FileServer.Port)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
-func (server *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (FileServer *FileServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
 			http.Error(w, fmt.Sprintf("%v", err), http.StatusInternalServerError)
 		}
 	}()
 
-	server.handler(w, req)
+	FileServer.handler(w, req)
 }
 
-func (server *Server) router() {
-	http.Handle("/", server)
+func (FileServer *FileServer) router() {
+	http.Handle("/", FileServer)
 }
 
-func (server *Server) handler(w http.ResponseWriter, req *http.Request) {
+func (FileServer *FileServer) handler(w http.ResponseWriter, req *http.Request) {
 	uri := req.RequestURI      // 请求的URI, 如http://localhost:8080/hello -> /hello
 	if uri == "/favicon.ico" { // 不处理
 		return
@@ -108,7 +94,7 @@ func (server *Server) handler(w http.ResponseWriter, req *http.Request) {
 
 	log.Printf(`%s "%s" from %v`, req.Method, req.RequestURI, req.RemoteAddr)
 
-	fullpath, relpath := server.requestURIToFilepath(uri)
+	fullpath, relpath := FileServer.requestURIToFilepath(uri)
 	log.Printf("\tTo Filepath:%v", fullpath)
 
 	file, err := os.Open(fullpath)
@@ -119,28 +105,28 @@ func (server *Server) handler(w http.ResponseWriter, req *http.Request) {
 		stat, _ := file.Stat()
 		if stat.IsDir() {
 			log.Printf("\tProcess Dir...")
-			server.processDir(w, file, fullpath, relpath)
+			FileServer.processDir(w, file, fullpath, relpath)
 		} else {
 			log.Printf("\tSend File...")
-			server.sendFile(w, file, fullpath, relpath)
+			FileServer.sendFile(w, file, fullpath, relpath)
 		}
 	}
 
 	log.Printf("END")
 }
 
-func (server *Server) requestURIToFilepath(uri string) (fullpath string, relpath string) {
+func (FileServer *FileServer) requestURIToFilepath(uri string) (fullpath string, relpath string) {
 	unescapeIt, _ := url.QueryUnescape(uri)
 
 	relpath = unescapeIt
 	log.Printf("\tUnescape URI:%v", relpath)
 
-	fullpath = filepath.Join(server.webroot, relpath[1:])
+	fullpath = filepath.Join(FileServer.Webroot, relpath[1:])
 
 	return
 }
 
-func (server *Server) processDir(w http.ResponseWriter, dir *os.File, fullpath string, relpath string) {
+func (FileServer *FileServer) processDir(w http.ResponseWriter, dir *os.File, fullpath string, relpath string) {
 	w.Header().Set("Content-type", "text/html; charset=UTF-8")
 	fis, err := dir.Readdir(-1)
 	gotang.CheckError(err)
@@ -167,7 +153,7 @@ func (server *Server) processDir(w http.ResponseWriter, dir *os.File, fullpath s
 	})
 }
 
-func (server *Server) sendFile(w http.ResponseWriter, file *os.File, fullpath string, relpath string) {
+func (FileServer *FileServer) sendFile(w http.ResponseWriter, file *os.File, fullpath string, relpath string) {
 	if mimetype := mime.TypeByExtension(path.Ext(file.Name())); mimetype != "" {
 		w.Header().Set("Content-Type", mimetype)
 	} else {
@@ -177,13 +163,4 @@ func (server *Server) sendFile(w http.ResponseWriter, file *os.File, fullpath st
 	statinfo, _ := file.Stat()
 	w.Header().Set("Content-Length", fmt.Sprintf("%v", statinfo.Size()))
 	io.Copy(w, file)
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////
-
-func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU()*2 - 1)
-	flag.Parse()
-	server := &Server{port: port, webroot: webroot}
-	server.Start()
 }
