@@ -61,32 +61,32 @@ func wlanIP4() string {
 	return wip
 }
 
-func (FileServer *FileServer) Start() {
-	FileServer.router()
+func (fileServer *FileServer) Start() {
+	fileServer.router()
 
 	fmt.Printf("Serving HTTP on %s port %d from \"%s\" ... \n",
-		wlanIP4(), FileServer.Port, FileServer.Webroot,
+		wlanIP4(), fileServer.Port, fileServer.Webroot,
 	)
 
-	addr := fmt.Sprintf(":%v", FileServer.Port)
+	addr := fmt.Sprintf(":%v", fileServer.Port)
 	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
-func (FileServer *FileServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (fileServer *FileServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer func() {
 		if err := recover(); err != nil {
 			http.Error(w, fmt.Sprintf("%v", err), http.StatusInternalServerError)
 		}
 	}()
 
-	FileServer.handler(w, req)
+	fileServer.handler(w, req)
 }
 
-func (FileServer *FileServer) router() {
-	http.Handle("/", FileServer)
+func (fileServer *FileServer) router() {
+	http.Handle("/", fileServer)
 }
 
-func (FileServer *FileServer) handler(w http.ResponseWriter, req *http.Request) {
+func (fileServer *FileServer) handler(w http.ResponseWriter, req *http.Request) {
 	uri := req.RequestURI      // 请求的URI, 如http://localhost:8080/hello -> /hello
 	if uri == "/favicon.ico" { // 不处理
 		return
@@ -94,7 +94,7 @@ func (FileServer *FileServer) handler(w http.ResponseWriter, req *http.Request) 
 
 	log.Printf(`%s "%s" from %v`, req.Method, req.RequestURI, req.RemoteAddr)
 
-	fullpath, relpath := FileServer.requestURIToFilepath(uri)
+	fullpath, relpath := fileServer.requestURIToFilepath(uri)
 	log.Printf("\tTo Filepath:%v", fullpath)
 
 	file, err := os.Open(fullpath)
@@ -105,28 +105,28 @@ func (FileServer *FileServer) handler(w http.ResponseWriter, req *http.Request) 
 		stat, _ := file.Stat()
 		if stat.IsDir() {
 			log.Printf("\tProcess Dir...")
-			FileServer.processDir(w, file, fullpath, relpath)
+			fileServer.processDir(w, file, fullpath, relpath)
 		} else {
 			log.Printf("\tSend File...")
-			FileServer.sendFile(w, file, fullpath, relpath)
+			fileServer.sendFile(w, file, fullpath, relpath)
 		}
 	}
 
 	log.Printf("END")
 }
 
-func (FileServer *FileServer) requestURIToFilepath(uri string) (fullpath string, relpath string) {
+func (fileServer *FileServer) requestURIToFilepath(uri string) (fullpath string, relpath string) {
 	unescapeIt, _ := url.QueryUnescape(uri)
 
 	relpath = unescapeIt
 	log.Printf("\tUnescape URI:%v", relpath)
 
-	fullpath = filepath.Join(FileServer.Webroot, relpath[1:])
+	fullpath = filepath.Join(fileServer.Webroot, relpath[1:])
 
 	return
 }
 
-func (FileServer *FileServer) processDir(w http.ResponseWriter, dir *os.File, fullpath string, relpath string) {
+func (_ *FileServer) processDir(w http.ResponseWriter, dir *os.File, fullpath string, relpath string) {
 	w.Header().Set("Content-type", "text/html; charset=UTF-8")
 	fis, err := dir.Readdir(-1)
 	gotang.CheckError(err)
@@ -153,7 +153,7 @@ func (FileServer *FileServer) processDir(w http.ResponseWriter, dir *os.File, fu
 	})
 }
 
-func (FileServer *FileServer) sendFile(w http.ResponseWriter, file *os.File, fullpath string, relpath string) {
+func (_ *FileServer) sendFile(w http.ResponseWriter, file *os.File, fullpath string, relpath string) {
 	if mimetype := mime.TypeByExtension(path.Ext(file.Name())); mimetype != "" {
 		w.Header().Set("Content-Type", mimetype)
 	} else {
