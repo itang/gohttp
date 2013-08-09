@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
-	"github.com/itang/gohttp"
 	"os"
 	"runtime"
+
+	"github.com/itang/gohttp"
 )
 
 var (

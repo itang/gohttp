@@ -2,8 +2,6 @@ package gohttp
 
 import (
 	"fmt"
-	"github.com/itang/gotang"
-	gotang_net "github.com/itang/gotang/net"
 	"html/template"
 	"io"
 	"log"
@@ -13,6 +11,9 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/itang/gotang"
+	gotang_net "github.com/itang/gotang/net"
 )
 
 const htmlTpl = `
