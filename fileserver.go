@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/itang/gotang"
 	gotang_net "github.com/itang/gotang/net"
@@ -87,41 +88,44 @@ func (fileServer *FileServer) router() {
 	http.Handle("/", fileServer)
 }
 
+var (
+	s1 = strings.Repeat(". ", (len("2013/11/19 21:16:13 ")+4)/2)
+	s2 = strings.Repeat("*", len("2013/11/19 21:16:13 "))
+)
+
 func (fileServer *FileServer) handler(w http.ResponseWriter, req *http.Request) {
 	uri := req.RequestURI      // 请求的URI, 如http://localhost:8080/hello -> /hello
 	if uri == "/favicon.ico" { // 不处理
 		return
 	}
 
-	log.Printf(`%s "%s" from %v`, req.Method, req.RequestURI, req.RemoteAddr)
+	traceInfo := fmt.Sprintf("%s \"%s\" from %v\n", req.Method, req.RequestURI, req.RemoteAddr)
 
 	fullpath, relpath := fileServer.requestURIToFilepath(uri)
-	log.Printf("\tTo Filepath:%v", fullpath)
+	traceInfo += fmt.Sprintf(s1 + "To Filepath:%v\n", fullpath)
 
 	file, err := os.Open(fullpath)
 	if err != nil || os.IsNotExist(err) { // 文件不存在
-		log.Println("\tNotFound")
+		traceInfo += s1 + "NotFound!\n"
 		http.NotFound(w, req)
 	} else {
 		stat, _ := file.Stat()
 		if stat.IsDir() {
-			log.Printf("\tProcess Dir...")
+			traceInfo += s1 + "Process Dir...\n"
 			fileServer.processDir(w, file, fullpath, relpath)
 		} else {
-			log.Printf("\tSend File...")
+			traceInfo += s1 + "Send File...\n"
 			fileServer.sendFile(w, file, fullpath, relpath)
 		}
 	}
 
-	log.Printf("END")
+	log.Printf(traceInfo + s2 + "END")
 }
 
 func (fileServer *FileServer) requestURIToFilepath(uri string) (fullpath string, relpath string) {
 	unescapeIt, _ := url.QueryUnescape(uri)
 
 	relpath = unescapeIt
-	log.Printf("\tUnescape URI:%v", relpath)
-
 	fullpath = filepath.Join(fileServer.Webroot, relpath[1:])
 
 	return
