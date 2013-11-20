@@ -89,8 +89,8 @@ func (fileServer *FileServer) router() {
 }
 
 var (
-	s1 = strings.Repeat(". ", (len("2013/11/19 21:16:13 ")+4)/2)
-	s2 = strings.Repeat("*", len("2013/11/19 21:16:13 "))
+	s1 = strings.Repeat(". ", (len("2013/11/19 21:16:13")+4)/2)
+	s2 = strings.Repeat("*", len("2013/11/19 21:16:13"))
 )
 
 func (fileServer *FileServer) handler(w http.ResponseWriter, req *http.Request) {
@@ -102,7 +102,7 @@ func (fileServer *FileServer) handler(w http.ResponseWriter, req *http.Request) 
 	traceInfo := fmt.Sprintf("%s \"%s\" from %v\n", req.Method, req.RequestURI, req.RemoteAddr)
 
 	fullpath, relpath := fileServer.requestURIToFilepath(uri)
-	traceInfo += fmt.Sprintf(s1 + "To Filepath:%v\n", fullpath)
+	traceInfo += fmt.Sprintf(s1+"To Filepath: %v\n", fullpath)
 
 	file, err := os.Open(fullpath)
 	if err != nil || os.IsNotExist(err) { // 文件不存在
@@ -119,7 +119,7 @@ func (fileServer *FileServer) handler(w http.ResponseWriter, req *http.Request) 
 		}
 	}
 
-	log.Printf(traceInfo + s2 + "END")
+	log.Printf(traceInfo + s2 + " END")
 }
 
 func (fileServer *FileServer) requestURIToFilepath(uri string) (fullpath string, relpath string) {
