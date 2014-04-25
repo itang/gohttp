@@ -134,7 +134,7 @@ func (fileServer *FileServer) requestURIToFilepath(uri string) (fullpath string,
 func (_ *FileServer) processDir(w http.ResponseWriter, dir *os.File, fullpath string, relpath string) {
 	w.Header().Set("Content-type", "text/html; charset=UTF-8")
 	fis, err := dir.Readdir(-1)
-	gotang.CheckError(err)
+	gotang.AssertNoError(err, "读取文件夹信息出错！")
 
 	items := make([]Item, 0, len(fis))
 	for _, fi := range fis {
