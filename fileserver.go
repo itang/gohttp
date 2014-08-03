@@ -23,7 +23,8 @@ const htmlTpl = `
 <head>
   <meta charset="utf-8">
   <title>{{.CurrentURI}} - gohttp</title></head>
-  <link href="http://getbootstrap.com/2.3.2/assets/css/bootstrap.css" rel="stylesheet">
+  <link href="http://cdn.staticfile.org/twitter-bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet">
+  <link href="http://cdn.staticfile.org/twitter-bootstrap/2.3.2/css/bootstrap-responsive.min.css" rel="stylesheet">
 <body>
 <div class="container-fluid">
 <ul class="breadcrumb">
