@@ -18,6 +18,10 @@ func init() {
 	flag.IntVar(&port, "port", port, "The port (default is 8080)")
 	flag.StringVar(&webroot, "webroot", wd, "Web root directory (default is current work directory)")
 
+	// shorthand version flags
+	flag.IntVar(&port, "p", port, "The port (default is 8080)")
+	flag.StringVar(&webroot, "d", wd, "Web root directory (default is current work directory)")
+
 	flag.Parse()
 }
 
