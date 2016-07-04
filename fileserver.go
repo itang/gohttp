@@ -103,7 +103,7 @@ func (fileServer *FileServer) handler(w http.ResponseWriter, req *http.Request) 
 	traceInfo := fmt.Sprintf("%s \"%s\" from %v\n", req.Method, req.RequestURI, req.RemoteAddr)
 
 	fullpath, relpath := fileServer.requestURIToFilepath(uri)
-	traceInfo += fmt.Sprintf(s1+"To Filepath: %v\n", fullpath)
+	traceInfo += fmt.Sprintf("%sTo Filepath: %v\n", s1, fullpath)
 
 	file, err := os.Open(fullpath)
 	if err != nil || os.IsNotExist(err) { // 文件不存在
@@ -120,7 +120,7 @@ func (fileServer *FileServer) handler(w http.ResponseWriter, req *http.Request) 
 		}
 	}
 
-	log.Printf(traceInfo + s2 + " END")
+	log.Println(traceInfo + s2 + " END")
 }
 
 func (fileServer *FileServer) requestURIToFilepath(uri string) (fullpath string, relpath string) {
