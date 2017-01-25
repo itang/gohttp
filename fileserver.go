@@ -1,11 +1,13 @@
 package gohttp
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
 	"log"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,7 +16,7 @@ import (
 	"strings"
 
 	"github.com/itang/gotang"
-	gotang_net "github.com/itang/gotang/net"
+	"time"
 )
 
 const htmlTpl = `
@@ -56,8 +58,37 @@ type Item struct {
 	Size  int64
 }
 
+func lookupWlanIP4addr() (ip4 string, err error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return
+	}
+	for _, addr := range addrs {
+		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String(), nil
+			}
+		}
+	}
+	return "", errors.New("No Found")
+}
+
+func tryGetLocalAddr() (ip string, err error) {
+	conn, err := net.DialTimeout("udp", "google.com:80", time.Millisecond*500)
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+	defer conn.Close()
+
+	return strings.Split(conn.LocalAddr().String(), ":")[0], nil
+}
+
 func wlanIP4() string {
-	wip, err := gotang_net.LookupWlanIP4addr()
+	wip, err := tryGetLocalAddr()
+	if err != nil {
+		wip, err = lookupWlanIP4addr()
+	}
 	if err != nil {
 		wip = "Unknown"
 	}
