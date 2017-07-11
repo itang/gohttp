@@ -15,8 +15,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/itang/gotang"
 	"time"
+
+	"github.com/itang/gotang"
 )
 
 const htmlTpl = `
@@ -177,7 +178,7 @@ func (_ *FileServer) processDir(w http.ResponseWriter, dir *os.File, fullpath st
 		item := Item{
 			Name:  fi.Name(),
 			Title: fi.Name(),
-			URI:   path.Join(relpath, fi.Name()),
+			URI:   template.URLQueryEscaper(path.Join(relpath, fi.Name())),
 			Size:  size,
 		}
 		items = append(items, item)
