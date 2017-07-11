@@ -37,7 +37,7 @@ const htmlTpl = `
 </ul>
 <ul>
    {{range .files}}
-      <li><a href="{{.URI}}">{{.Name}}
+      <li><a href="/{{.URI}}">{{.Name}}
       {{if .Size }}
       <small>({{.Size}})</small>
       {{end}}
@@ -159,6 +159,7 @@ func (fileServer *FileServer) requestURIToFilepath(uri string) (fullpath string,
 	unescapeIt, _ := url.QueryUnescape(uri)
 
 	relpath = unescapeIt
+	fmt.Println("relpath", relpath)
 	fullpath = filepath.Join(fileServer.Webroot, relpath[1:])
 
 	return
