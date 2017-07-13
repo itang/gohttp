@@ -25,15 +25,15 @@ const htmlTpl = `
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>{{.CurrentURI}} - gohttp</title></head>
+  <title>{{.CurrentPath}} - gohttp</title></head>
   <link href="http://cdn.staticfile.org/twitter-bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet">
   <link href="http://cdn.staticfile.org/twitter-bootstrap/2.3.2/css/bootstrap-responsive.min.css" rel="stylesheet">
 <body>
 <div class="container-fluid">
 <ul class="breadcrumb">
   <li><a href="http://github.com/itang/gohttp">GOHTTP</a><span class="divider"> | </span></li>
-  <li><a href="#"><a href="{{.ParentURI}}">{{.ParentURI}}</a><span class="divider">/</span></li>
-  <li class="active"><a href="{{.CurrentURI}}">{{.CurrentURI}}</a></li>
+  <li><a href="#"><a href="/{{.ParentURI}}">{{.ParentPath}}</a><span class="divider"> | </span></li>
+  <li class="active"><a href="/{{.CurrentURI}}">{{.CurrentPath}}</a></li>
 </ul>
 <ul>
    {{range .files}}
@@ -159,7 +159,6 @@ func (fileServer *FileServer) requestURIToFilepath(uri string) (fullpath string,
 	unescapeIt, _ := url.QueryUnescape(uri)
 
 	relpath = unescapeIt
-	fmt.Println("relpath", relpath)
 	fullpath = filepath.Join(fileServer.Webroot, relpath[1:])
 
 	return
@@ -172,23 +171,26 @@ func (_ *FileServer) processDir(w http.ResponseWriter, dir *os.File, fullpath st
 
 	items := make([]Item, 0, len(fis))
 	for _, fi := range fis {
-		var size int64 = 0
+		var size int64
 		if !fi.IsDir() {
 			size = fi.Size()
 		}
 		item := Item{
 			Name:  fi.Name(),
 			Title: fi.Name(),
-			URI:   template.URLQueryEscaper(path.Join(relpath, fi.Name())),
+			URI:   url.PathEscape(path.Join(relpath, fi.Name())),
 			Size:  size,
 		}
 		items = append(items, item)
 	}
 
+	parentPath, currentPath := path.Dir(relpath), relpath
 	tmp.Execute(w, map[string]interface{}{
-		"ParentURI":  path.Dir(relpath),
-		"CurrentURI": relpath,
-		"files":      items,
+		"ParentPath":  parentPath,
+		"CurrentPath": currentPath,
+		"ParentURI":   url.PathEscape(parentPath),
+		"CurrentURI":  url.PathEscape(currentPath),
+		"files":       items,
 	})
 }
 
